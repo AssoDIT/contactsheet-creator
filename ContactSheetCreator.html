@@ -1,0 +1,1608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Sheet Creator - ShotDeck Style</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- Add jsPDF library for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+    * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    }
+
+    body {
+    font-family: 'Roboto', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    color: #333;
+    }
+
+    .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px;
+    }
+
+    .header {
+    text-align: center;
+    margin-bottom: 32px;
+    color: white;
+    }
+
+    .header h1 {
+    font-size: 2.5rem;
+    font-weight: 300;
+    margin-bottom: 8px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .header p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    }
+
+    .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 32px;
+    }
+
+    .card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+    }
+
+    .card-title {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    color: #1976d2;
+    font-weight: 500;
+    font-size: 1.2rem;
+    }
+
+    .card-title .material-icons {
+    margin-right: 8px;
+    }
+
+    /* Dropdown/Collapsible Styles */
+    .dropdown-section {
+    margin-bottom: 16px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+    }
+
+    .dropdown-header {
+    background: #f5f5f5;
+    padding: 12px 16px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 500;
+    color: #555;
+    transition: background-color 0.2s ease;
+    }
+
+    .dropdown-header:hover {
+    background: #eeee;
+    }
+
+    .dropdown-header .material-icons {
+    transition: transform 0.3s ease;
+    }
+
+    .dropdown-content {
+    padding: 16px;
+    display: none;
+    background: white;
+    }
+
+    .dropdown-section.active .dropdown-content {
+    display: block;
+    }
+
+    .dropdown-section.active .dropdown-header .material-icons {
+    transform: rotate(180deg);
+    }
+
+    .form-group {
+    margin-bottom: 20px;
+    }
+
+    .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #555;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    font-family: 'Roboto', sans-serif;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+    outline: none;
+    border-color: #1976d2;
+    box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+    }
+
+    .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    }
+
+    .drop-zone {
+    border: 3px dashed #1976d2;
+    border-radius: 12px;
+    padding: 40px 20px;
+    text-align: center;
+    background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 20px;
+    }
+
+    .drop-zone:hover,
+    .drop-zone.dragover {
+    background: linear-gradient(135deg, #bbdefb 0%, #e1bee7 100%);
+    border-color: #0d47a1;
+    transform: scale(1.02);
+    }
+
+    .drop-zone .material-icons {
+    font-size: 48px;
+    color: #1976d2;
+    margin-bottom: 16px;
+    }
+
+    .image-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+    }
+
+    .image-item {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #f5f5f5;
+    cursor: grab;
+    transition: transform 0.2s ease;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .image-item:hover {
+    transform: scale(1.05);
+    }
+
+    .image-item.dragging {
+    opacity: 0.5;
+    transform: rotate(5deg);
+    }
+
+    .image-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    }
+
+    .image-item .remove-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(244, 67, 54, 0.9);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: background 0.2s ease;
+    z-index: 10;
+    }
+
+    .image-item .remove-btn:hover {
+    background: #d32f2f;
+    }
+
+    .image-color-band {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 20px;
+    display: flex;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+    border-radius: 0 0 12px 12px;
+    overflow: hidden;
+    }
+
+    .color-segment {
+    flex: 1;
+    height: 100%;
+    transition: transform 0.2s ease;
+    }
+
+    .color-segment:hover {
+    transform: scaleY(1.2);
+    z-index: 5;
+    position: relative;
+    }
+
+    .btn {
+    background: #1976d2;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-right: 12px;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    }
+
+    .btn:hover {
+    background: #1565c0;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+    }
+
+    .btn-secondary {
+    background: #757575;
+    }
+
+    .btn-secondary:hover {
+    background: #616161;
+    }
+
+    .btn-success {
+    background: #388e3c;
+    }
+
+    .btn-success:hover {
+    background: #2e7d32;
+    }
+
+    .btn-danger {
+    background: #d32f2f;
+    }
+
+    .btn-danger:hover {
+    background: #c62828;
+    }
+
+    .btn-warning {
+    background: #f57c00;
+    }
+
+    .btn-warning:hover {
+    background: #ef6c00;
+    }
+
+    .canvas-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 24px;
+    margin-top: 32px;
+    }
+
+    .canvas-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    text-align: center;
+    }
+
+    .canvas-card h3 {
+    margin-bottom: 20px;
+    color: #1976d2;
+    font-weight: 500;
+    }
+
+    .action-buttons {
+    margin-bottom: 20px;
+    text-align: center;
+    }
+
+    canvas {
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    max-width: 100%;
+    height: auto;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    margin-bottom: 16px;
+    }
+
+    .color-palette {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 16px;
+    }
+
+    .color-swatch {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    border: 3px solid white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    position: relative;
+    }
+
+    .color-swatch:hover {
+    transform: scale(1.2);
+    }
+
+    .color-swatch::after {
+    content: attr(data-color);
+    position: absolute;
+    bottom: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+    white-space: nowrap;
+    }
+
+    .color-swatch:hover::after {
+    opacity: 1;
+    }
+
+    .progress-container {
+    margin: 20px 0;
+    display: none;
+    }
+
+    .progress-bar {
+    width: 100%;
+    height: 6px;
+    background: #e0e0e0;
+    border-radius: 3px;
+    overflow: hidden;
+    }
+
+    .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #1976d2, #42a5f5);
+    width: 0%;
+    transition: width 0.3s ease;
+    }
+
+    .preset-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+    }
+
+    .preset-item {
+    background: #f5f5f5;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    }
+
+    .preset-item:hover {
+    background: #e0e0e0;
+    transform: translateY(-1px);
+    }
+
+    .preset-item .delete-preset {
+    background: #f44336;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    font-size: 12px;
+    }
+
+    .color-info {
+    background: rgba(255,255,255,0.9);
+    padding: 12px;
+    border-radius: 8px;
+    margin-top: 16px;
+    text-align: left;
+    }
+
+    .color-info h4 {
+    color: #1976d2;
+    margin-bottom: 8px;
+    font-size: 14px;
+    }
+
+    .color-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-top: 12px;
+    }
+
+    .color-stat {
+    background: white;
+    padding: 8px;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 12px;
+    }
+
+    @media (max-width: 768px) {
+    .main-grid {
+    grid-template-columns: 1fr;
+    }
+    
+    .form-row {
+    grid-template-columns: 1fr;
+    }
+    
+    .canvas-section {
+    grid-template-columns: 1fr;
+    }
+
+    .image-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    }
+
+    }
+    </style>
+</head>
+<body>
+    <div class="container">
+    <div class="header">
+    <h1>Contact Sheet Creator</h1>
+    <p>Made by Ben Chaude-Woodman, DIT</p>
+    </div>
+
+    <div class="main-grid">
+    <!-- Left Column: Image Upload Section -->
+    <div class="card">
+    <div class="card-title">
+    <span class="material-icons">photo_library</span>
+    Images & Layout
+    </div>
+    
+    <div class="drop-zone" id="dropZone">
+    <div class="material-icons">cloud_upload</div>
+    <p><strong>Drop images here</strong><br>or click to select files</p>
+    <input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
+    </div>
+    
+    <div class="image-grid" id="imageGrid"></div>
+
+    <button class="btn btn-secondary" onclick="removeAllImages()">
+    <span class="material-icons">delete_sweep</span>
+    Remove All Images
+    </button>
+    </div>
+
+    <!-- Middle Column: Canvas Settings -->
+    <div class="card">
+    <div class="card-title">
+    <span class="material-icons">aspect_ratio</span>
+    Canvas Settings
+    </div>
+    
+    <div class="form-group">
+    <label>Canvas Aspect Ratio</label>
+    <select id="canvasRatio">
+    <option value="1.78">16:9 (Landscape)</option>
+    <option value="1.33">4:3</option>
+    <option value="1">Square (1:1)</option>
+    <option value="0.75">3:4 (Portrait)</option>
+    <option value="custom">Custom</option>
+    </select>
+    </div>
+    
+    <div class="form-group" id="customRatioGroup" style="display: none;">
+    <label>Custom Ratio (Width/Height)</label>
+    <input type="number" id="customRatio" min="0.1" step="0.01" value="1.5">
+    </div>
+    
+    <div class="form-group">
+    <label>Canvas Width (px)</label>
+    <input type="number" id="canvasWidth" value="1920" min="800" max="4000">
+    </div>
+    
+    <div class="form-group">
+    <label>Background Color</label>
+    <input type="color" id="bgColor" value="#000000">
+    </div>
+
+    <div class="form-group">
+    <label>Margin Between Images (px)</label>
+    <input type="number" id="imageMargin" value="10" min="0" max="50">
+    </div>
+    </div>
+
+    <!-- Right Column: All Settings -->
+    <div class="card">
+    <div class="card-title">
+    <span class="material-icons">settings</span>
+    Settings
+    </div>
+
+    <!-- Crop Settings Dropdown -->
+    <div class="dropdown-section">
+    <div class="dropdown-header" onclick="toggleDropdown(this)">
+    <span><span class="material-icons" style="margin-right: 8px;">crop</span>Crop Settings</span>
+    <span class="material-icons">expand_more</span>
+    </div>
+    <div class="dropdown-content">
+    <div class="form-row">
+    <div class="form-group">
+    <label>Crop Top (px)</label>
+    <input type="number" id="cropTop" value="0" min="0">
+    </div>
+    <div class="form-group">
+    <label>Crop Bottom (px)</label>
+    <input type="number" id="cropBottom" value="0" min="0">
+    </div>
+    </div>
+    
+    <div class="form-row">
+    <div class="form-group">
+    <label>Crop Left (px)</label>
+    <input type="number" id="cropLeft" value="0" min="0">
+    </div>
+    <div class="form-group">
+    <label>Crop Right (px)</label>
+    <input type="number" id="cropRight" value="0" min="0">
+    </div>
+    </div>
+    
+    <button class="btn btn-secondary" onclick="updateCropPreview()">
+    <span class="material-icons">refresh</span>
+    Update Preview
+    </button>
+    </div>
+    </div>
+
+    <!-- Text & Styling Dropdown -->
+    <div class="dropdown-section">
+    <div class="dropdown-header" onclick="toggleDropdown(this)">
+    <span><span class="material-icons" style="margin-right: 8px;">text_fields</span>Text & Styling</span>
+    <span class="material-icons">expand_more</span>
+    </div>
+    <div class="dropdown-content">
+    <div class="form-group">
+    <label>Title Text</label>
+    <input type="text" id="titleText" placeholder="My Photo Collection">
+    </div>
+    
+    <div class="form-group">
+    <label>Subtitle Text</label>
+    <input type="text" id="subtitleText" placeholder="Created on...">
+    </div>
+    
+    <div class="form-row">
+    <div class="form-group">
+    <label>Title Font Size</label>
+    <input type="number" id="titleFontSize" value="48" min="20" max="100">
+    </div>
+    <div class="form-group">
+    <label>Subtitle Font Size</label>
+    <input type="number" id="subtitleFontSize" value="24" min="12" max="60">
+    </div>
+    </div>
+    
+    <div class="form-group">
+    <label>Text Color</label>
+    <input type="color" id="textColor" value="#646464">
+    </div>
+    
+    <div class="form-group">
+    <label>Footer Text</label>
+    <textarea id="footerText" rows="2" placeholder="Additional notes or credits..."></textarea>
+    </div>
+    
+    <div class="form-group">
+    <label>Color Bands</label>
+    <select id="colorBandMode">
+    <option value="off">Off</option>
+    <option value="individual">Under Each Image</option>
+    <option value="bottom" selected>Bottom of Canvas</option>
+    </select>
+    </div>
+    
+    <div class="form-row">
+    <div class="form-group">
+    <label>Contrast: <span id="contrastValue">100%</span></label>
+    <input type="range" id="contrastSlider" min="0" max="200" value="100" step="1">
+    </div>
+    <div class="form-group">
+    <label>Saturation: <span id="saturationValue">100%</span></label>
+    <input type="range" id="saturationSlider" min="0" max="200" value="100" step="1">
+    </div>
+    </div>
+    </div>
+    </div>
+
+    <!-- Presets Dropdown -->
+    <div class="dropdown-section">
+    <div class="dropdown-header" onclick="toggleDropdown(this)">
+    <span><span class="material-icons" style="margin-right: 8px;">bookmark</span>Presets</span>
+    <span class="material-icons">expand_more</span>
+    </div>
+    <div class="dropdown-content">
+    <div class="form-row">
+    <div class="form-group">
+    <input type="text" id="presetName" placeholder="Preset name...">
+    </div>
+    <div class="form-group">
+    <button class="btn btn-success" onclick="savePreset()">
+    <span class="material-icons">save</span>
+    Save
+    </button>
+    </div>
+    </div>
+    
+    <div>
+    <button class="btn btn-secondary" onclick="exportPresets()">
+    <span class="material-icons">download</span>
+    Export
+    </button>
+    <button class="btn btn-secondary" onclick="importPresets()">
+    <span class="material-icons">upload</span>
+    Import
+    </button>
+    <button class="btn btn-danger" onclick="clearPresets()">
+    <span class="material-icons">delete</span>
+    Clear All
+    </button>
+    </div>
+    
+    <div class="preset-list" id="presetList"></div>
+    <input type="file" id="importInput" accept=".json" style="display: none;">
+    </div>
+    </div>
+    </div>
+    </div>
+
+    <!-- Canvas Section -->
+    <div class="canvas-section">
+    <div class="canvas-card">
+    <h3>Crop Preview</h3>
+    <canvas id="cropCanvas" width="600" height="600"></canvas>
+    <div class="color-info" id="cropColorInfo" style="display: none;">
+    <h4>Color Analysis</h4>
+    <div class="color-stats" id="cropColorStats"></div>
+    </div>
+    </div>
+    
+    <div class="canvas-card">
+    <h3>Contact Sheet Preview</h3>
+    
+    <!-- Action Buttons at top of contact sheet -->
+    <div class="action-buttons">
+    <button class="btn" onclick="generateContactSheet()">
+    <span class="material-icons">auto_awesome</span>
+    Generate Contact Sheet
+    </button>
+    <button class="btn btn-success" onclick="downloadContactSheet()">
+    <span class="material-icons">download</span>
+    Download JPG
+    </button>
+    <button class="btn btn-secondary" onclick="downloadContactSheet('png')">
+    <span class="material-icons">download</span>
+    Download PNG
+    </button>
+    <button class="btn btn-warning" onclick="downloadContactSheetPDF()">
+    <span class="material-icons">picture_as_pdf</span>
+    Download PDF
+    </button>
+    
+    <div class="progress-container" id="progressContainer">
+    <div class="progress-bar">
+    <div class="progress-fill" id="progressFill"></div>
+    </div>
+    </div>
+    </div>
+    
+    <canvas id="contactCanvas"></canvas>
+    <div class="color-palette" id="colorPalette"></div>
+    <div class="color-info" id="sheetColorInfo" style="display: none;">
+    <h4>Overall Color Palette</h4>
+    <div class="color-stats" id="sheetColorStats"></div>
+    </div>
+    </div>
+    </div>
+    </div>
+
+    <script>
+    let selectedImages = [];
+    let imageColors = new Map(); // Store colors for each image
+    let cropCanvas = document.getElementById('cropCanvas');
+    let cropCtx = cropCanvas.getContext('2d');
+    let contactCanvas = document.getElementById('contactCanvas');
+    let ctx = contactCanvas.getContext('2d');
+    let logoImage = null;
+
+    // Dropdown toggle function
+    function toggleDropdown(header) {
+    const section = header.parentElement;
+    section.classList.toggle('active');
+    }
+
+    // File handling
+    document.getElementById('dropZone').addEventListener('click', () => {
+    document.getElementById('fileInput').click();
+    });
+
+    document.getElementById('fileInput').addEventListener('change', handleFiles);
+
+    document.getElementById('dropZone').addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.currentTarget.classList.add('dragover');
+    });
+
+    document.getElementById('dropZone').addEventListener('dragleave', (e) => {
+    e.currentTarget.classList.remove('dragover');
+    });
+
+    document.getElementById('dropZone').addEventListener('drop', (e) => {
+    e.preventDefault();
+    e.currentTarget.classList.remove('dragover');
+    handleFiles({ target: { files: e.dataTransfer.files } });
+    });
+
+    document.getElementById('canvasRatio').addEventListener('change', () => {
+    const customGroup = document.getElementById('customRatioGroup');
+    customGroup.style.display = document.getElementById('canvasRatio').value === 'custom' ? 'block' : 'none';
+    });
+
+    // Contrast and Saturation slider event listeners
+    document.getElementById('contrastSlider').addEventListener('input', (e) => {
+    document.getElementById('contrastValue').textContent = e.target.value + '%';
+    updateCropPreview();
+    });
+
+    document.getElementById('saturationSlider').addEventListener('input', (e) => {
+    document.getElementById('saturationValue').textContent = e.target.value + '%';
+    updateCropPreview();
+    });
+
+    function removeAllImages() {
+    selectedImages = [];
+    imageColors.clear();
+    updateImageGrid();
+    updateCropPreview();
+    document.getElementById('fileInput').value = '';
+    }
+
+    function handleFiles(event) {
+    const files = Array.from(event.target.files);
+    files.forEach(file => {
+    if (file.type.startsWith('image/')) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+    const imageId = Date.now() + Math.random();
+    selectedImages.push({
+    file: file,
+    dataUrl: e.target.result,
+    name: file.name,
+    id: imageId
+    });
+    updateImageGrid();
+    updateCropPreview();
+    };
+    reader.readAsDataURL(file);
+    }
+    });
+    }
+
+    function updateImageGrid() {
+    const grid = document.getElementById('imageGrid');
+    grid.innerHTML = '';
+    
+    selectedImages.forEach((img, index) => {
+    const div = document.createElement('div');
+    div.className = 'image-item';
+    div.draggable = true;
+    div.dataset.index = index;
+    
+    div.innerHTML = `
+    <img src="${img.dataUrl}" alt="${img.name}">
+    <button class="remove-btn" onclick="removeImage(${index})">×</button>
+    <div class="image-color-band" id="colorBand${index}"></div>
+    `;
+    
+    // Extract colors for this image
+    extractImageColors(img.dataUrl, index);
+    
+    // Drag and drop for reordering
+    div.addEventListener('dragstart', (e) => {
+    e.dataTransfer.setData('text/plain', index);
+    div.classList.add('dragging');
+    });
+    
+    div.addEventListener('dragend', () => {
+    div.classList.remove('dragging');
+    });
+    
+    div.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    });
+    
+    div.addEventListener('drop', (e) => {
+    e.preventDefault();
+    const dragIndex = parseInt(e.dataTransfer.getData('text/plain'));
+    const dropIndex = parseInt(div.dataset.index);
+    
+    if (dragIndex !== dropIndex) {
+    const draggedItem = selectedImages.splice(dragIndex, 1)[0];
+    selectedImages.splice(dropIndex, 0, draggedItem);
+    updateImageGrid();
+    updateCropPreview();
+    }
+    });
+    
+    grid.appendChild(div);
+    });
+    }
+
+    function extractImageColors(dataUrl, index) {
+    const img = new Image();
+    img.onload = function() {
+    const tempCanvas = document.createElement('canvas');
+    const tempCtx = tempCanvas.getContext('2d');
+    
+    // Use optimal size for color extraction
+    const size = 100;
+    tempCanvas.width = size;
+    tempCanvas.height = size;
+    
+    tempCtx.drawImage(img, 0, 0, size, size);
+    
+    try {
+    const imageData = tempCtx.getImageData(0, 0, size, size);
+    const colors = extractDominantColors(imageData.data, 3);
+    
+    // Store colors for this image
+    imageColors.set(index, colors);
+    
+    const colorBand = document.getElementById(`colorBand${index}`);
+    if (colorBand && colors.length > 0) {
+    colorBand.innerHTML = '';
+    colors.forEach((color, colorIndex) => {
+    const segment = document.createElement('div');
+    segment.className = 'color-segment';
+    segment.style.backgroundColor = color;
+    segment.title = `${color} (${Math.round((colors.length - colorIndex) / colors.length * 100)}% dominant)`;
+    segment.addEventListener('click', () => {
+    navigator.clipboard.writeText(color);
+    segment.style.transform = 'scaleY(1.5)';
+    setTimeout(() => segment.style.transform = 'scaleY(1)', 300);
+    });
+    colorBand.appendChild(segment);
+    });
+    }
+    } catch (error) {
+    console.log('Could not extract colors from image:', error);
+    }
+    };
+    img.src = dataUrl;
+    }
+
+    function extractDominantColors(data, numColors) {
+    const colorMap = new Map();
+    const step = 8; // Sample every 8th pixel for better performance
+    
+    for (let i = 0; i < data.length; i += step * 4) {
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+    const a = data[i + 3];
+    
+    // Skip transparent pixels
+    if (a < 200) continue;
+    
+    // Quantize colors to reduce noise
+    const qr = Math.floor(r / 20) * 20;
+    const qg = Math.floor(g / 20) * 20;
+    const qb = Math.floor(b / 20) * 20;
+    
+    // Calculate brightness and saturation for better color selection
+    const brightness = (qr + qg + qb) / 3;
+    const max = Math.max(qr, qg, qb);
+    const min = Math.min(qr, qg, qb);
+    const saturation = max === 0 ? 0 : (max - min) / max;
+    
+    // Prefer colors with good saturation and avoid extremes
+    if (brightness < 40 || brightness > 220 || saturation < 0.2) continue;
+    
+    const colorKey = `${qr},${qg},${qb}`;
+    const weight = saturation * (1 - Math.abs(brightness - 128) / 128); // Weight by saturation and mid-tone preference
+    colorMap.set(colorKey, (colorMap.get(colorKey) || 0) + weight);
+    }
+    
+    // Sort by weighted frequency and return top colors
+    return Array.from(colorMap.entries())
+    .sort(([,a], [,b]) => b - a)
+    .slice(0, numColors)
+    .map(([color]) => {
+    const [r, g, b] = color.split(',').map(Number);
+    return `rgb(${r}, ${g}, ${b})`;
+    });
+    }
+
+    function removeImage(index) {
+    selectedImages.splice(index, 1);
+    imageColors.delete(index);
+    updateImageGrid();
+    updateCropPreview();
+    }
+
+    function applyImageFilters(ctx, imageData) {
+    const contrast = parseInt(document.getElementById('contrastSlider').value) / 100;
+    const saturation = parseInt(document.getElementById('saturationSlider').value) / 100;
+    
+    const data = imageData.data;
+    
+    for (let i = 0; i < data.length; i += 4) {
+    let r = data[i];
+    let g = data[i + 1];
+    let b = data[i + 2];
+    
+    // Apply contrast
+    r = ((r / 255 - 0.5) * contrast + 0.5) * 255;
+    g = ((g / 255 - 0.5) * contrast + 0.5) * 255;
+    b = ((b / 255 - 0.5) * contrast + 0.5) * 255;
+    
+    // Apply saturation
+    const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+    r = gray + saturation * (r - gray);
+    g = gray + saturation * (g - gray);
+    b = gray + saturation * (b - gray);
+    
+    // Clamp values
+    data[i] = Math.max(0, Math.min(255, r));
+    data[i + 1] = Math.max(0, Math.min(255, g));
+    data[i + 2] = Math.max(0, Math.min(255, b));
+    }
+    
+    return imageData;
+    }
+
+    function updateCropPreview() {
+    cropCtx.clearRect(0, 0, cropCanvas.width, cropCanvas.height);
+    
+    if (selectedImages.length === 0) {
+    document.getElementById('cropColorInfo').style.display = 'none';
+    return;
+    }
+    
+    const img = new Image();
+    img.onload = function() {
+    const cropTop = parseInt(document.getElementById('cropTop').value) || 0;
+    const cropBottom = parseInt(document.getElementById('cropBottom').value) || 0;
+    const cropLeft = parseInt(document.getElementById('cropLeft').value) || 0;
+    const cropRight = parseInt(document.getElementById('cropRight').value) || 0;
+    
+    const cropW = img.width - cropLeft - cropRight;
+    const cropH = img.height - cropTop - cropBottom;
+    
+    if (cropW <= 0 || cropH <= 0) return;
+    
+    const scale = Math.min(cropCanvas.width / cropW, cropCanvas.height / cropH);
+    const drawW = cropW * scale;
+    const drawH = cropH * scale;
+    const dx = (cropCanvas.width - drawW) / 2;
+    const dy = (cropCanvas.height - drawH) / 2;
+    
+    // Draw image first
+    cropCtx.drawImage(img, cropLeft, cropTop, cropW, cropH, dx, dy, drawW, drawH);
+    
+    // Apply filters if they're not at default values
+    const contrast = parseInt(document.getElementById('contrastSlider').value);
+    const saturation = parseInt(document.getElementById('saturationSlider').value);
+    
+    if (contrast !== 100 || saturation !== 100) {
+    const imageData = cropCtx.getImageData(dx, dy, drawW, drawH);
+    const filteredData = applyImageFilters(cropCtx, imageData);
+    cropCtx.putImageData(filteredData, dx, dy);
+    }
+    
+    // Draw crop border
+    cropCtx.strokeStyle = '#1976d2';
+    cropCtx.lineWidth = 3;
+    cropCtx.strokeRect(dx, dy, drawW, drawH);
+    
+    // Show color info for first image
+    const colors = imageColors.get(0);
+    if (colors) {
+    updateColorInfo('cropColorInfo', 'cropColorStats', colors);
+    }
+    };
+    img.src = selectedImages[0].dataUrl;
+    }
+
+    function updateColorInfo(infoId, statsId, colors) {
+    const info = document.getElementById(infoId);
+    const stats = document.getElementById(statsId);
+    
+    if (!colors || colors.length === 0) {
+    info.style.display = 'none';
+    return;
+    }
+    
+    info.style.display = 'block';
+    stats.innerHTML = '';
+    
+    colors.forEach((color, index) => {
+    const stat = document.createElement('div');
+    stat.className = 'color-stat';
+    stat.innerHTML = `
+    <div style="width: 100%; height: 20px; background: ${color}; border-radius: 4px; margin-bottom: 4px;"></div>
+    <div style="font-weight: 500;">${color}</div>
+    <div style="opacity: 0.7;">Rank ${index + 1}</div>
+    `;
+    stats.appendChild(stat);
+    });
+    }
+
+    // Perfect grid calculation from the uploaded script
+    function calculateGrid(numImages, canvasW, canvasH, aspectRatios) {
+    let best = {cols: 1, rows: numImages, cellW: 0, cellH: 0, minCell: 0};
+    const margin = parseInt(document.getElementById('imageMargin').value) || 10;
+    
+    for (let cols = 1; cols <= numImages; cols++) {
+    let rows = Math.ceil(numImages / cols);
+    let cellW = (canvasW - (cols + 1) * margin) / cols;
+    let cellH = (canvasH - (rows + 1) * margin) / rows;
+    
+    let minCell = Infinity;
+    for (let i = 0; i < numImages; i++) {
+    let ar = aspectRatios[i];
+    let w = cellW, h = cellH;
+    if (w / h > ar) w = h * ar; else h = w / ar;
+    minCell = Math.min(minCell, Math.min(w, h));
+    }
+    
+    if (minCell > best.minCell) {
+    best = {cols, rows, cellW, cellH, minCell};
+    }
+    }
+    
+    return best;
+    }
+
+    function loadImage(src) {
+    return new Promise((resolve) => {
+    let img = new Image();
+    img.onload = () => resolve(img);
+    img.src = src;
+    });
+    }
+
+    async function generateContactSheet() {
+    if (selectedImages.length === 0) {
+    alert('Please select some images first!');
+    return;
+    }
+
+    showProgress(true);
+
+    try {
+    const canvasW = parseInt(document.getElementById('canvasWidth').value);
+    let canvasRatio = document.getElementById('canvasRatio').value;
+    
+    if (canvasRatio === 'custom') {
+    canvasRatio = parseFloat(document.getElementById('customRatio').value);
+    } else {
+    canvasRatio = parseFloat(canvasRatio);
+    }
+    
+    const colorBandMode = document.getElementById('colorBandMode').value;
+    const margin = parseInt(document.getElementById('imageMargin').value) || 10;
+    
+    // Reserve space for color bands based on mode
+    let colorBandHeight = 0;
+    if (colorBandMode === 'bottom') {
+    colorBandHeight = 24;
+    } else if (colorBandMode === 'individual') {
+    colorBandHeight = 0; // Individual bands are drawn under each image
+    }
+    
+    const canvasH = Math.round(canvasW / canvasRatio);
+    
+    contactCanvas.width = canvasW;
+    contactCanvas.height = canvasH;
+    
+    const bgColor = document.getElementById('bgColor').value;
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, canvasW, canvasH);
+    
+    const cropTop = parseInt(document.getElementById('cropTop').value) || 0;
+    const cropBottom = parseInt(document.getElementById('cropBottom').value) || 0;
+    const cropLeft = parseInt(document.getElementById('cropLeft').value) || 0;
+    const cropRight = parseInt(document.getElementById('cropRight').value) || 0;
+    
+    const titleText = document.getElementById('titleText').value;
+    const subtitleText = document.getElementById('subtitleText').value;
+    const footerText = document.getElementById('footerText').value;
+    const titleFontSize = parseInt(document.getElementById('titleFontSize').value);
+    const subtitleFontSize = parseInt(document.getElementById('subtitleFontSize').value);
+    const textColor = document.getElementById('textColor').value;
+    
+    // Calculate text area height
+    let textAreaHeight = 20;
+    if (titleText) textAreaHeight += titleFontSize + 10;
+    if (subtitleText) textAreaHeight += subtitleFontSize + 10;
+    if (footerText) textAreaHeight += 30;
+    
+    const availableW = canvasW - 40;
+    const availableH = canvasH - textAreaHeight - colorBandHeight - 40;
+    
+    // Load all images and calculate aspect ratios
+    const loaded = await Promise.all(selectedImages.map(imgObj => loadImage(imgObj.dataUrl)));
+    const aspectRatios = loaded.map(img => {
+    const cropW = img.width - cropLeft - cropRight;
+    const cropH = img.height - cropTop - cropBottom;
+    return cropW / cropH;
+    });
+    
+    // Calculate optimal grid
+    const grid = calculateGrid(selectedImages.length, availableW, availableH, aspectRatios);
+    const {cols, rows, cellW, cellH} = grid;
+    
+    // Calculate grid positioning
+    const gridW = cols * cellW + (cols - 1) * margin;
+    const gridH = rows * cellH + (rows - 1) * margin;
+    const gridStartX = (canvasW - gridW) / 2;
+    const gridStartY = textAreaHeight + (availableH - gridH) / 2;
+    
+    // Draw text
+    ctx.fillStyle = textColor;
+    ctx.textAlign = 'center';
+    let y = 20;
+    
+    if (titleText) {
+    ctx.font = `bold ${titleFontSize}px 'Roboto', sans-serif`;
+    ctx.fillText(titleText, canvasW / 2, y + titleFontSize);
+    y += titleFontSize + 10;
+    }
+    
+    if (subtitleText) {
+    ctx.font = `${subtitleFontSize}px 'Roboto', sans-serif`;
+    ctx.fillText(subtitleText, canvasW / 2, y + subtitleFontSize);
+    y += subtitleFontSize + 10;
+    }
+    
+    // Draw images and individual color bands
+    const allColors = [];
+    const contrast = parseInt(document.getElementById('contrastSlider').value);
+    const saturation = parseInt(document.getElementById('saturationSlider').value);
+    
+    for (let i = 0; i < selectedImages.length; i++) {
+    updateProgress((i / selectedImages.length) * 80);
+    
+    const img = loaded[i];
+    const cropW = img.width - cropLeft - cropRight;
+    const cropH = img.height - cropTop - cropBottom;
+    const ar = cropW / cropH;
+    
+    let w = cellW, h = cellH;
+    if (w / h > ar) w = h * ar; else h = w / ar;
+    
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const cellX = gridStartX + col * (cellW + margin);
+    const cellY = gridStartY + row * (cellH + margin);
+    const x = cellX + (cellW - w) / 2;
+    const yy = cellY + (cellH - h) / 2;
+    
+    // Clip to cell bounds for image
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(cellX, cellY, cellW, cellH);
+    ctx.clip();
+    
+    // Draw image
+    ctx.drawImage(img, cropLeft, cropTop, cropW, cropH, x, yy, w, h);
+    
+    // Apply filters if they're not at default values
+    if (contrast !== 100 || saturation !== 100) {
+    const imageData = ctx.getImageData(x, yy, w, h);
+    const filteredData = applyImageFilters(ctx, imageData);
+    ctx.putImageData(filteredData, x, yy);
+    }
+    
+    ctx.restore();
+    
+    // Draw individual color bands if mode is 'individual'
+    if (colorBandMode === 'individual') {
+    const colors = imageColors.get(i) || ['#cccc', '#9999', '#6666'];
+    const bandHeight = 12;
+    const bandY = cellY + cellH - bandHeight;
+    const colorWidth = cellW / colors.length;
+    
+    colors.forEach((color, colorIndex) => {
+    ctx.fillStyle = color;
+    ctx.fillRect(
+    cellX + (colorIndex * colorWidth), 
+    bandY, 
+    colorWidth, 
+    bandHeight
+    );
+    });
+    
+    // Add subtle border around individual color band
+    ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(cellX, bandY, cellW, bandHeight);
+    }
+    
+    // Add colors from this image to overall palette
+    const imageColorSet = imageColors.get(i);
+    if (imageColorSet) {
+    allColors.push(...imageColorSet);
+    }
+    }
+    
+    // Draw bottom color bands if mode is 'bottom'
+    updateProgress(90);
+    if (colorBandMode === 'bottom' && selectedImages.length > 0) {
+    const bandY = canvasH - colorBandHeight - 10;
+    const bandWidth = canvasW / selectedImages.length;
+    
+    selectedImages.forEach((imgObj, index) => {
+    const colors = imageColors.get(index) || ['#cccc', '#9999', '#6666'];
+    const bandX = index * bandWidth;
+    const colorWidth = bandWidth / colors.length;
+    
+    colors.forEach((color, colorIndex) => {
+    ctx.fillStyle = color;
+    ctx.fillRect(
+    bandX + (colorIndex * colorWidth), 
+    bandY, 
+    colorWidth, 
+    colorBandHeight
+    );
+    });
+    
+    // Add subtle border between image color bands
+    if (index < selectedImages.length - 1) {
+    ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(bandX + bandWidth, bandY);
+    ctx.lineTo(bandX + bandWidth, bandY + colorBandHeight);
+    ctx.stroke();
+    }
+    });
+    
+    // Add border around entire color band area
+    ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(0, bandY, canvasW, colorBandHeight);
+    }
+    
+    // Draw footer
+    if (footerText) {
+    ctx.font = '18px "Roboto", sans-serif';
+    const footerY = colorBandMode === 'bottom' ? canvasH - colorBandHeight - 30 : canvasH - 30;
+    ctx.fillText(footerText, canvasW / 2, footerY);
+    }
+    
+    // Update color palette
+    updateColorPalette(allColors);
+    updateProgress(100);
+    
+    } catch (error) {
+    console.error('Error generating contact sheet:', error);
+    alert('Error generating contact sheet. Please try again.');
+    } finally {
+    showProgress(false);
+    }
+    }
+
+    function updateColorPalette(colors) {
+    const palette = document.getElementById('colorPalette');
+    palette.innerHTML = '';
+    
+    if (!colors || colors.length === 0) {
+    document.getElementById('sheetColorInfo').style.display = 'none';
+    return;
+    }
+    
+    // Get most common colors across all images
+    const colorCounts = {};
+    colors.forEach(color => {
+    colorCounts[color] = (colorCounts[color] || 0) + 1;
+    });
+    
+    const sortedColors = Object.entries(colorCounts)
+    .sort(([,a], [,b]) => b - a)
+    .slice(0, 8)
+    .map(([color]) => color);
+    
+    sortedColors.forEach((color, index) => {
+    const swatch = document.createElement('div');
+    swatch.className = 'color-swatch';
+    swatch.style.backgroundColor = color;
+    swatch.setAttribute('data-color', color);
+    swatch.addEventListener('click', () => {
+    navigator.clipboard.writeText(color);
+    swatch.style.transform = 'scale(1.3)';
+    setTimeout(() => swatch.style.transform = 'scale(1)', 200);
+    });
+    palette.appendChild(swatch);
+    });
+    
+    // Update color info
+    updateColorInfo('sheetColorInfo', 'sheetColorStats', sortedColors.slice(0, 4));
+    }
+
+    function downloadContactSheet(format = 'jpeg') {
+    if (contactCanvas.width === 0) {
+    alert('Please generate a contact sheet first!');
+    return;
+    }
+    
+    const quality = format === 'jpeg' ? 0.9 : 1;
+    const mimeType = format === 'jpeg' ? 'image/jpeg' : 'image/png';
+    const extension = format === 'jpeg' ? 'jpg' : 'png';
+    
+    // Get title text and date for filename
+    const titleText = document.getElementById('titleText').value || 'contact-sheet';
+    const date = new Date().toISOString().slice(0, 10);
+    const filename = `${titleText}_${date}.${extension}`;
+    
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = contactCanvas.toDataURL(mimeType, quality);
+    link.click();
+    }
+
+    function downloadContactSheetPDF() {
+    if (contactCanvas.width === 0) {
+    alert('Please generate a contact sheet first!');
+    return;
+    }
+
+    try {
+    // Get canvas dimensions
+    const canvasWidth = contactCanvas.width;
+    const canvasHeight = contactCanvas.height;
+    
+    // Calculate PDF dimensions (A4 or custom based on aspect ratio)
+    const aspectRatio = canvasWidth / canvasHeight;
+    let pdfWidth, pdfHeight;
+    
+    if (aspectRatio > 1) {
+    // Landscape orientation
+    pdfWidth = 297; // A4 landscape width in mm
+    pdfHeight = 297 / aspectRatio;
+    } else {
+    // Portrait orientation
+    pdfHeight = 297; // A4 height in mm
+    pdfWidth = 297 * aspectRatio;
+    }
+    
+    // Create new jsPDF instance
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({
+    orientation: aspectRatio > 1 ? 'landscape' : 'portrait',
+    unit: 'mm',
+    format: [pdfWidth, pdfHeight]
+    });
+    
+    // Convert canvas to image data
+    const imgData = contactCanvas.toDataURL('image/jpeg', 0.95);
+    
+    // Add image to PDF
+    pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+    
+    // Get title text and date for filename
+    const titleText = document.getElementById('titleText').value || 'contact-sheet';
+    const date = new Date().toISOString().slice(0, 10);
+    const filename = `${titleText}_${date}.pdf`;
+    
+    // Save the PDF
+    pdf.save(filename);
+    
+    } catch (error) {
+    console.error('Error generating PDF:', error);
+    alert('Error generating PDF. Please try again.');
+    }
+    }
+
+    function showProgress(show) {
+    document.getElementById('progressContainer').style.display = show ? 'block' : 'none';
+    if (!show) updateProgress(0);
+    }
+
+    function updateProgress(percent) {
+    document.getElementById('progressFill').style.width = percent + '%';
+    }
+
+    // Preset functions
+    function getPresetData() {
+    return {
+    canvasRatio: document.getElementById('canvasRatio').value,
+    customRatio: document.getElementById('customRatio').value,
+    canvasWidth: document.getElementById('canvasWidth').value,
+    bgColor: document.getElementById('bgColor').value,
+    imageMargin: document.getElementById('imageMargin').value,
+    cropTop: document.getElementById('cropTop').value,
+    cropBottom: document.getElementById('cropBottom').value,
+    cropLeft: document.getElementById('cropLeft').value,
+    cropRight: document.getElementById('cropRight').value,
+    titleText: document.getElementById('titleText').value,
+    subtitleText: document.getElementById('subtitleText').value,
+    footerText: document.getElementById('footerText').value,
+    titleFontSize: document.getElementById('titleFontSize').value,
+    subtitleFontSize: document.getElementById('subtitleFontSize').value,
+    textColor: document.getElementById('textColor').value,
+    contrastSlider: document.getElementById('contrastSlider').value,
+    saturationSlider: document.getElementById('saturationSlider').value,
+    colorBandMode: document.getElementById('colorBandMode').value
+    };
+    }
+
+    function setPresetData(preset) {
+    Object.keys(preset).forEach(key => {
+    const element = document.getElementById(key);
+    if (element) element.value = preset[key];
+    });
+    
+    // Update slider value displays
+    document.getElementById('contrastValue').textContent = document.getElementById('contrastSlider').value + '%';
+    document.getElementById('saturationValue').textContent = document.getElementById('saturationSlider').value + '%';
+    
+    const customGroup = document.getElementById('customRatioGroup');
+    customGroup.style.display = document.getElementById('canvasRatio').value === 'custom' ? 'block' : 'none';
+    updateCropPreview();
+    }
+
+    function savePreset() {
+    const name = document.getElementById('presetName').value.trim();
+    if (!name) {
+    alert('Please enter a preset name!');
+    return;
+    }
+    
+    const presets = JSON.parse(localStorage.getItem('contactSheetPresets') || '{}');
+    presets[name] = getPresetData();
+    localStorage.setItem('contactSheetPresets', JSON.stringify(presets));
+    
+    document.getElementById('presetName').value = '';
+    loadPresets();
+    }
+
+    function loadPreset(name) {
+    const presets = JSON.parse(localStorage.getItem('contactSheetPresets') || '{}');
+    if (presets[name]) {
+    setPresetData(presets[name]);
+    }
+    }
+
+    function deletePreset(name) {
+    if (confirm(`Delete preset "${name}"?`)) {
+    const presets = JSON.parse(localStorage.getItem('contactSheetPresets') || '{}');
+    delete presets[name];
+    localStorage.setItem('contactSheetPresets', JSON.stringify(presets));
+    loadPresets();
+    }
+    }
+
+    function loadPresets() {
+    const presets = JSON.parse(localStorage.getItem('contactSheetPresets') || '{}');
+    const presetList = document.getElementById('presetList');
+    presetList.innerHTML = '';
+    
+    Object.keys(presets).forEach(name => {
+    const div = document.createElement('div');
+    div.className = 'preset-item';
+    div.innerHTML = `
+    <span onclick="loadPreset('${name}')">${name}</span>
+    <button class="delete-preset" onclick="deletePreset('${name}')">×</button>
+    `;
+    presetList.appendChild(div);
+    });
+    }
+
+    function exportPresets() {
+    const presets = localStorage.getItem('contactSheetPresets') || '{}';
+    const blob = new Blob([presets], {type: 'application/json'});
+    const link = document.createElement('a');
+    link.download = 'contact-sheet-presets.json';
+    link.href = URL.createObjectURL(blob);
+    link.click();
+    }
+
+    function importPresets() {
+    document.getElementById('importInput').click();
+    }
+
+    document.getElementById('importInput').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+    try {
+    const presets = JSON.parse(ev.target.result);
+    localStorage.setItem('contactSheetPresets', JSON.stringify(presets));
+    loadPresets();
+    alert('Presets imported successfully!');
+    } catch {
+    alert('Invalid preset file.');
+    }
+    };
+    reader.readAsText(file);
+    });
+
+    function clearPresets() {
+    if (confirm('Clear all presets?')) {
+    localStorage.removeItem('contactSheetPresets');
+    loadPresets();
+    }
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+    loadPresets();
+    document.getElementById('subtitleText').value = `Created on ${new Date().toLocaleDateString()}`;
+    updateCropPreview();
+    });
+    </script>
+</body>
+</html>
